@@ -5,9 +5,9 @@ GETH applies linked-list in trie's cached node. Precisely, it is map hash + bidi
                                  +---------+                       +-------------+
            +--db state.Database--|cachingDB|--+--db trie.Database--|trie.Database|
 +-------+  |                     +---------+                       +-------------+
-|StateDb|--+                                 +--db *cachingDB
-+-------+  |                   +----------+  |
-           +--trie state.Trie--|cachedTrie|--+
+|StateDb|--+                                 
++-------+  |                   +----------+  
+           +--trie state.Trie--|cachedTrie|--+--db *cachingDB
                                +----------+
 ```               
 
