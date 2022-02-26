@@ -11,5 +11,7 @@ GETH applies linked-list in trie's cached node. Precisely, it is map hash + bidi
                                +----------+
 ```               
 
-1) `db state.Database` Formal blockchain uses new stateDb with `stateCache state.Database` as db, which `stateCache state.Database` is actually a `cachingDB` instance that created through `state.NewDatabaseWithConfig(...)`
-2) 
+1) `db state.Database`. Formal blockchain uses new stateDb with `stateCache state.Database` as db, which `stateCache state.Database` is actually a `cachingDB` instance that created through `state.NewDatabaseWithConfig(...)`
+2) `trie state.Trie`. is created through cachingDB.OpenTrie(rootHash, cachingDB.db), it is trie with cache feature.
+
+
