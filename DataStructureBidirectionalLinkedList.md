@@ -1,4 +1,4 @@
-GETH applies linked-list in trie's cachedNode. Precisely, it is map hash + bidirectional linked-list.
+GETH applies bidirectional linked-list in trie.
 
 ```sh  
                                   
