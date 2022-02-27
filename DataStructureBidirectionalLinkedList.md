@@ -30,7 +30,43 @@ Features of flush-list (bidirectional linked-list)
 
 1) `Database.oldest` head of linked-list.
 2) `Database.newest` tail of linked-list.
-3) CachedNode is element of linked-list.
-4) `cacheNode.flushNext` & `cacheNode.flushPrev` are fields to form the linked-list.
+3) `CachedNode` is element of linked-list.
+4) `CacheNode.flushNext` & `CacheNode.flushPrev` are fields to form the linked-list.
 
+Iteration of linked-list
+```sh
+func (db *Database) Cap(limit common.StorageSize) error {
+	......
+  
+	oldest := db.oldest
+	for size > limit && oldest != (common.Hash{}) {
+		// Fetch the oldest referenced node and push into the batch
+		node := db.dirties[oldest]
+		rawdb.WriteTrieNode(batch, oldest, node.rlp())
+
+		// If we exceeded the ideal batch size, commit and reset
+		if batch.ValueSize() >= ethdb.IdealBatchSize {
+			if err := batch.Write(); err != nil {
+				log.Error("Failed to write flush list to disk", "err", err)
+				return err
+			}
+			batch.Reset()
+		}
+		// Iterate to the next flush item, or abort if the size cap was achieved. Size
+		// is the total size, including the useful cached data (hash -> blob), the
+		// cache item metadata, as well as external children mappings.
+		size -= common.StorageSize(common.HashLength + int(node.size) + cachedNodeSize)
+		if node.children != nil {
+			size -= common.StorageSize(cachedNodeChildrenSize + len(node.children)*(common.HashLength+2))
+		}
+		oldest = node.flushNext
+	}
+	// Flush out any remainder data from the last batch
+	if err := batch.Write(); err != nil {
+		log.Error("Failed to write flush list to disk", "err", err)
+		return err
+	}
+	......
+}
+```
 
