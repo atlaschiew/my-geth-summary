@@ -24,5 +24,8 @@ CachedNode is created after trie is commited. The flow is
 3) db.insert(...)
 4) lastly, db.dirties is filled with cachedNode
 
-next this cachedNode must be inserted into flush-list to form a complete linked-list, and flush-list just used by trie.Database.Cap(...) to flush from memory to disk.
+Next, this cachedNode must be inserted into flush-list to form a complete linked-list, and flush-list just used by trie.Database.Cap(...) to flush from memory to disk.
+
+Features of flush-list (bidirectional linked-list)
+1) 
 
