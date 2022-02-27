@@ -3,7 +3,7 @@ GETH applies bidirectional linked-list in trie.
 ```sh  
                                   
                                  +---------+                       +-------------+
-           +--db state.Database--|cachingDB|--+--db trie.Database--|trie.Database|
+           +--db state.Database--|cachingDB|--+--db trie.Database--|trie.Database|--+--diskdb ethdb.KeyValueStore
 +-------+  |                     +---------+                       +-------------+
 |StateDb|--+                                 
 +-------+  |                   +----------+  
