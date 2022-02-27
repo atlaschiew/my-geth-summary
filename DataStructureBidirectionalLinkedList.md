@@ -33,8 +33,13 @@ Features of flush-list (bidirectional linked-list)
 3) `CachedNode` is element of linked-list.
 4) `CacheNode.flushNext` & `CacheNode.flushPrev` are fields to form the linked-list.
 
-Iteration of linked-list
+Iterator
 ```sh
+// Cap iteratively flushes old but still referenced trie nodes until the total
+// memory usage goes below the given threshold.
+//
+// Note, this method is a non-synchronized mutator. It is unsafe to call this
+// concurrently with other mutators.
 func (db *Database) Cap(limit common.StorageSize) error {
 	......
   
@@ -44,29 +49,53 @@ func (db *Database) Cap(limit common.StorageSize) error {
 		node := db.dirties[oldest]
 		rawdb.WriteTrieNode(batch, oldest, node.rlp())
 
-		// If we exceeded the ideal batch size, commit and reset
-		if batch.ValueSize() >= ethdb.IdealBatchSize {
-			if err := batch.Write(); err != nil {
-				log.Error("Failed to write flush list to disk", "err", err)
-				return err
-			}
-			batch.Reset()
-		}
-		// Iterate to the next flush item, or abort if the size cap was achieved. Size
-		// is the total size, including the useful cached data (hash -> blob), the
-		// cache item metadata, as well as external children mappings.
-		size -= common.StorageSize(common.HashLength + int(node.size) + cachedNodeSize)
-		if node.children != nil {
-			size -= common.StorageSize(cachedNodeChildrenSize + len(node.children)*(common.HashLength+2))
-		}
+		......
 		oldest = node.flushNext
 	}
-	// Flush out any remainder data from the last batch
-	if err := batch.Write(); err != nil {
-		log.Error("Failed to write flush list to disk", "err", err)
-		return err
-	}
+	
 	......
 }
 ```
 
+Appendation
+```sh
+// insert inserts a collapsed trie node into the memory database.
+// The blob size must be specified to allow proper size tracking.
+// All nodes inserted by this function will be reference tracked
+// and in theory should only used for **trie nodes** insertion.
+func (db *Database) insert(hash common.Hash, size int, node node) {
+	......
+	
+	// Update the flush-list endpoints
+	if db.oldest == (common.Hash{}) {
+		db.oldest, db.newest = hash, hash
+	} else {
+		db.dirties[db.newest].flushNext, db.newest = hash, hash
+	}
+	......
+}
+
+```
+
+Deletion
+```sh
+// dereference is the private locked version of Dereference.
+func (db *Database) dereference(child common.Hash, parent common.Hash) {
+	......
+	if node.parents == 0 {
+		// Remove the node from the flush-list
+		switch child {
+			case db.oldest:
+				db.oldest = node.flushNext
+				db.dirties[node.flushNext].flushPrev = common.Hash{}
+			case db.newest:
+				db.newest = node.flushPrev
+				db.dirties[node.flushPrev].flushNext = common.Hash{}
+			default:
+				db.dirties[node.flushPrev].flushNext = node.flushNext
+				db.dirties[node.flushNext].flushPrev = node.flushPrev
+		}
+		......
+	}
+}
+```
