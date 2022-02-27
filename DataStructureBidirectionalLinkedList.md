@@ -17,7 +17,7 @@ GETH applies linked-list in trie's cachedNode. Precisely, it is map hash + bidir
 
 long story short, let's dig deep into how trie's cachedNode is being created and used?
 
-Cached node is created after trie is commited. The flow is
+CachedNode is created after trie is commited. The flow is
 
 1) trie.Commit(...)
 2) h := newCommitter(), h.Commit(...)
